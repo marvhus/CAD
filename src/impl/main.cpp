@@ -106,6 +106,28 @@ struct sLine : public sShape
 
 
 
+struct sBox : public sShape
+{
+    sBox()
+    {
+        nMaxNodes = 2;
+        vecNodes.reserve(nMaxNodes);
+    }
+
+    void DrawYourself(olc::PixelGameEngine *pge) override
+    {
+        int sx, sy, ex, ey;
+        WorldToScreen(vecNodes[0].pos, sx, sy);
+        WorldToScreen(vecNodes[1].pos, ex, ey);
+        pge->DrawRect(sx, sy, ex - sx, ey - sy, col);
+    }
+};
+
+
+
+
+
+
 
 
 class olcPGEtest : public olc::PixelGameEngine
@@ -283,6 +305,7 @@ private:
     void HandleShapes()
     {
 
+        // ============== CREATE LINE ===============
         if (GetKey(olc::Key::L).bPressed && currentAction == Action::NONE)
         {
             tempShape = new sLine();
@@ -296,6 +319,21 @@ private:
             currentAction = Action::CREATE_SHAPE;
         }
 
+        // =============== CREATE BOX ==================
+        if (GetKey(olc::Key::B).bPressed && currentAction == Action::NONE)
+        {
+            tempShape = new sBox();
+
+            // Place first node at location of keypress
+            selectedNode = tempShape->GetNextNode(vCursor);
+
+            // Get seccond node
+            selectedNode = tempShape->GetNextNode(vCursor);
+
+            currentAction = Action::CREATE_SHAPE;
+        }
+
+        // ============ MOVE NODE ===================
         if (GetKey(olc::Key::M).bPressed && currentAction == NONE)
         {
             //std::cout << "M pressed" << std::endl;
@@ -313,11 +351,13 @@ private:
             }
         }
 
+        // ============ SNAP NODE TO CURSOR ===========
         if (currentAction != Action::NONE)
         {
             selectedNode->pos = vCursor;
         }
 
+        // ============ ADD NODE TO SHAPE, AND COMPLETE SHAPE ============
         if (GetMouse(0).bReleased && currentAction != Action::NONE) {
             selectedNode = tempShape->GetNextNode(vCursor);
             if (selectedNode == nullptr)
@@ -330,10 +370,12 @@ private:
             }
         }
 
+        // ============ UPDATE SHAPE STATIC VALUES ======================
         // Update shape translation coefficients
         sShape::fWorldScale = fScale;
         sShape::vWorldOffset = vOffset;
 
+        // ============= DRAW ALL SHAPES ========================
         // Draw all existing shapes
         for (auto &shape : listShapes)
         {
@@ -341,6 +383,7 @@ private:
             shape->DrawNodes(this);
         }
 
+        // ============== DRAW TEMP SHAPE ===================
         // Draw the wip shape.. if there is one
         if (currentAction != Action::NONE) {
             tempShape->DrawYourself(this);
