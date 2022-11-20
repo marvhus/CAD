@@ -5,6 +5,9 @@ Note:
 this uses Version 2.20 of olcPGE
 [link to release](https://github.com/OneLoneCoder/olcPixelGameEngine/releases/tag/v2.20)
 
+This olcPGE project is my attempt at following along with [javidx9's (One Lone Coder) video on Polymorphism](https://youtu.be/kxKKHKSMGIg).
+I have been following along with him creating things, and I have added some things of my own.
+
 ## Quickstart
 
 ### Compile/Build
