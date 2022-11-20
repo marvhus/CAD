@@ -126,6 +126,27 @@ struct sBox : public sShape
 
 
 
+struct sCircle : public sShape
+{
+    sCircle()
+    {
+        nMaxNodes = 2;
+        vecNodes.reserve(nMaxNodes);
+    }
+
+    void DrawYourself(olc::PixelGameEngine *pge) override
+    {
+        float fRadius = (vecNodes[0].pos - vecNodes[1].pos).mag();
+
+        int sx, sy, ex, ey;
+        WorldToScreen(vecNodes[0].pos, sx, sy);
+        WorldToScreen(vecNodes[1].pos, ex, ey);
+        pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+        pge->DrawCircle(sx, sy, fRadius * fWorldScale, col);
+    }
+};
+
+
 
 
 
@@ -323,6 +344,20 @@ private:
         if (GetKey(olc::Key::B).bPressed && currentAction == Action::NONE)
         {
             tempShape = new sBox();
+
+            // Place first node at location of keypress
+            selectedNode = tempShape->GetNextNode(vCursor);
+
+            // Get seccond node
+            selectedNode = tempShape->GetNextNode(vCursor);
+
+            currentAction = Action::CREATE_SHAPE;
+        }
+
+        // =============== CREATE CIRCLE ==================
+        if (GetKey(olc::Key::C).bPressed && currentAction == Action::NONE)
+        {
+            tempShape = new sCircle();
 
             // Place first node at location of keypress
             selectedNode = tempShape->GetNextNode(vCursor);
