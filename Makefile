@@ -1,8 +1,8 @@
 NAME := testing
-CFLAGS := -I src/incl/ -I thirdparty/ -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
+CFLAGS := -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
 CC := g++
 
-cpp_source_files := $(shell find src/impl/ -name *.cpp)
+cpp_source_files := $(shell find src/ -name *.cpp)
 
 .PHONY: build_debug
 
