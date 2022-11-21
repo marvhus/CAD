@@ -1,3 +1,4 @@
+#include <string>
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
@@ -8,6 +9,66 @@ enum Action
     NONE,
     MOVE_NODE,
     CREATE_SHAPE
+};
+std::string ActionToString(Action action)
+{
+
+    switch (action)
+    {
+        case Action::CREATE_SHAPE:
+            return "Create Shape";
+        case Action::MOVE_NODE:
+            return "Move Node";
+        default:
+            return "None";
+    }
+}
+
+enum Shape
+{
+    LINE,
+    BOX,
+    CIRCLE,
+    SPLINE,
+};
+std::string ShapeToString(Shape shape)
+{
+    switch (shape)
+    {
+        case Shape::LINE:
+            return "Line";
+        case Shape::BOX:
+            return "Box";
+        case Shape::CIRCLE:
+            return "Circle";
+        case Shape::SPLINE:
+            return "Spline";
+        default:
+            return "None";
+    }
+}
+
+struct Keybindings
+{
+    static const olc::Key create  = olc::Key::W;
+    static const olc::Key move    = olc::Key::E;
+    static const olc::Key exit    = olc::Key::ESCAPE;
+    static const olc::Key line    = olc::Key::K1;
+    static const olc::Key box     = olc::Key::K2;
+    static const olc::Key cicle   = olc::Key::K3;
+    static const olc::Key spline  = olc::Key::K4;
+    static const uint32_t select  = 0;
+    static const uint32_t pan     = 1;
+    static const olc::Key zoomIn  = olc::Key::Q;
+    static const olc::Key zoomOut = olc::Key::A;
+    bool isZoomingIn(olc::PixelGameEngine *pge)
+    {
+        return pge->GetMouseWheel() > 0;
+    }
+    bool isZoomingOut(olc::PixelGameEngine *pge)
+    {
+        return pge->GetMouseWheel() < 0;
+    }
 };
 
 struct sShape;
@@ -218,6 +279,9 @@ private:
     olc::vf2d vCursor = { 0, 0 };
 
     Action currentAction = Action::NONE;
+    Shape currentShape = Shape::LINE;
+
+    Keybindings keybindings = Keybindings();
 
 
 
@@ -242,12 +306,12 @@ private:
     // Handle paning
     void HandlePan(olc::vf2d vMouse)
     {
-        if (GetMouse(1).bPressed)
+        if (GetMouse(keybindings.pan).bPressed)
         {
             vStartPan = vMouse;
         }
 
-        if (GetMouse(1).bHeld)
+        if (GetMouse(keybindings.pan).bHeld)
         {
             vOffset -= (vMouse - vStartPan) / fScale;
             vStartPan = vMouse;
@@ -260,11 +324,11 @@ private:
         olc::vf2d vMouseBeforeZoom;
         ScreenToWorld((int)vMouse.x, (int)vMouse.y, vMouseBeforeZoom);
 
-        if (GetKey(olc::Key::Q).bHeld || GetMouseWheel() > 0)
+        if (GetKey(keybindings.zoomIn).bHeld || keybindings.isZoomingIn(this))
         {
             fScale *= 1.1f;
         }
-        if (GetKey(olc::Key::A).bHeld || GetMouseWheel() < 0)
+        if (GetKey(keybindings.zoomOut).bHeld || keybindings.isZoomingOut(this))
         {
             fScale *= 0.9f;
         }
@@ -372,52 +436,43 @@ private:
     void HandleShapes()
     {
 
-        // ============== CREATE LINE ===============
-        if (GetKey(olc::Key::L).bPressed && currentAction == Action::NONE)
+        // ============= SHAPE SELECTION ============
+        if (GetKey(keybindings.line).bPressed) 
         {
-            tempShape = new sLine();
-
-            // Place first node at location of keypress
-            selectedNode = tempShape->GetNextNode(vCursor);
-
-            // Get seccond node
-            selectedNode = tempShape->GetNextNode(vCursor);
-
-            currentAction = Action::CREATE_SHAPE;
+            currentShape = Shape::LINE;
         }
 
-        // =============== CREATE BOX ==================
-        if (GetKey(olc::Key::B).bPressed && currentAction == Action::NONE)
+        if (GetKey(keybindings.box).bPressed) 
         {
-            tempShape = new sBox();
-
-            // Place first node at location of keypress
-            selectedNode = tempShape->GetNextNode(vCursor);
-
-            // Get seccond node
-            selectedNode = tempShape->GetNextNode(vCursor);
-
-            currentAction = Action::CREATE_SHAPE;
+            currentShape = Shape::BOX;
+        }
+        if (GetKey(keybindings.cicle).bPressed) 
+        {
+            currentShape = Shape::CIRCLE;
+        }
+        if (GetKey(keybindings.spline).bPressed) 
+        {
+            currentShape = Shape::SPLINE;
         }
 
-        // =============== CREATE CIRCLE ==================
-        if (GetKey(olc::Key::C).bPressed && currentAction == Action::NONE)
+        // ============= CREATE SHAPE ===============
+        if (GetKey(keybindings.create).bPressed && currentAction == Action::NONE)
         {
-            tempShape = new sCircle();
-
-            // Place first node at location of keypress
-            selectedNode = tempShape->GetNextNode(vCursor);
-
-            // Get seccond node
-            selectedNode = tempShape->GetNextNode(vCursor);
-
-            currentAction = Action::CREATE_SHAPE;
-        }
-
-        // ============== CREATE LINE ===============
-        if (GetKey(olc::Key::S).bPressed && currentAction == Action::NONE)
-        {
-            tempShape = new sCurve();
+            switch (currentShape)
+            {
+                case Shape::LINE:
+                    tempShape = new sLine();
+                    break;
+                case Shape::BOX:
+                    tempShape = new sBox();
+                    break;
+                case Shape::CIRCLE:
+                    tempShape = new sCircle();
+                    break;
+                case Shape::SPLINE:
+                    tempShape = new sCurve();
+                    break;
+            }
 
             // Place first node at location of keypress
             selectedNode = tempShape->GetNextNode(vCursor);
@@ -429,7 +484,7 @@ private:
         }
 
         // ============ MOVE NODE ===================
-        if (GetKey(olc::Key::M).bPressed && currentAction == NONE)
+        if (GetKey(keybindings.move).bReleased && currentAction == NONE)
         {
             //std::cout << "M pressed" << std::endl;
             tempShape == nullptr;
@@ -453,7 +508,7 @@ private:
         }
 
         // ============ ADD NODE TO SHAPE, AND COMPLETE SHAPE ============
-        if (GetMouse(0).bReleased && currentAction != Action::NONE) {
+        if (GetMouse(keybindings.select).bPressed && currentAction != Action::NONE) {
             selectedNode = tempShape->GetNextNode(vCursor);
             if (selectedNode == nullptr)
             {
@@ -486,6 +541,13 @@ private:
         }
     }
 
+    // Tell the user what mode they are in at the moment
+    void DisplayMode()
+    {
+        DrawString(10, ScreenHeight() - 15, "Action: " + ActionToString(currentAction), olc::YELLOW);
+        DrawString(10, ScreenHeight() - 35, "Shape: " + ShapeToString(currentShape), olc::YELLOW);
+    }
+
 public:
 	bool OnUserCreate() override
 	{
@@ -511,8 +573,11 @@ public:
         // Handle all the shape drawing, creating, and modifying
         HandleShapes();
 
+        // Tell the user what mode/action they are in/doing
+        DisplayMode();
+
         // Exit when escape has been pressed
-		return !GetKey(olc::Key::ESCAPE).bPressed;
+		return !GetKey(keybindings.exit).bPressed;
 	}
 };
 
