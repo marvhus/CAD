@@ -1,18 +1,13 @@
-# oclPGE test
-Some fiddling around and learing of the Pixel Game Engine made by One Lone Coder.  
-https://github.com/OneLoneCoder/olcPixelGameEngine
+# CAD
+A simple CAD program made in C++ using the [PixelGameEngine by One Lone Coder (javidx9)](https://github.com/OneLoneCoder/olcPixelGameEngine)
 
-This spesific olcPGE project is a simple CAD program that can make:
+This is a simple CAD program that can make:
 - Lines
 - Boxes
 - Circles
 - Splines (Bezier Curve)
 
 So far you can't save things, but I might add that at a later point.
-
----
-
-This is CAD program is inspired/based on [javidx9's (One Lone Coder) video on Polymorphism](https://youtu.be/kxKKHKSMGIg).
 
 ---
 
@@ -57,6 +52,8 @@ Then press and release the left mouse button to stop moving the node
 You can pan around by holding down the right mouse button, and moving the mouse.
 
 You can zoom in and out by scrolling the mouse wheel, or pressing the Q or A on your keyboard
+
+You can also toggle the HUD/UI by pressing the S key on your keyboard.
 
 ---
 
