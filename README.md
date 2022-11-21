@@ -22,6 +22,12 @@ this uses Version 2.20 of olcPGE
 
 ---
 
+## Screenshot
+
+![Demo](Demo.png)
+
+---
+
 ## How to use
 
 How you use this program is that you first swlect what shape you want to use.

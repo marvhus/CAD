@@ -14,7 +14,7 @@ build_debug:
 build_release:
 	echo $(cpp_source_files)
 	mkdir -p build/release
-	$(CC) $(cpp_source_files) $(CFLAGS) -s -o build/release/$(NAME).bin
+	$(CC) $(cpp_source_files) $(CFLAGS) -O3 -s -o build/release/$(NAME).bin
 
 run:
 	./build/debug/$(NAME).bin
