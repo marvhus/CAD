@@ -12,7 +12,6 @@ enum Action
 };
 std::string ActionToString(Action action)
 {
-
     switch (action)
     {
         case Action::CREATE_SHAPE:
@@ -50,25 +49,18 @@ std::string ShapeToString(Shape shape)
 
 struct Keybindings
 {
-    static const olc::Key create  = olc::Key::W;
-    static const olc::Key move    = olc::Key::E;
-    static const olc::Key exit    = olc::Key::ESCAPE;
-    static const olc::Key line    = olc::Key::K1;
-    static const olc::Key box     = olc::Key::K2;
-    static const olc::Key cicle   = olc::Key::K3;
-    static const olc::Key spline  = olc::Key::K4;
-    static const uint32_t select  = 0;
-    static const uint32_t pan     = 1;
-    static const olc::Key zoomIn  = olc::Key::Q;
-    static const olc::Key zoomOut = olc::Key::A;
-    bool isZoomingIn(olc::PixelGameEngine *pge)
-    {
-        return pge->GetMouseWheel() > 0;
-    }
-    bool isZoomingOut(olc::PixelGameEngine *pge)
-    {
-        return pge->GetMouseWheel() < 0;
-    }
+    olc::HWButton create (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::W); }
+    olc::HWButton move   (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::E); }
+    olc::HWButton hud    (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::S); }
+    olc::HWButton exit   (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::ESCAPE); }
+    olc::HWButton line   (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::K1); }
+    olc::HWButton box    (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::K2); }
+    olc::HWButton circle (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::K3); }
+    olc::HWButton spline (olc::PixelGameEngine *pge) { return pge->GetKey(olc::Key::K4); }
+    olc::HWButton select (olc::PixelGameEngine *pge) { return pge->GetMouse(0); }
+    olc::HWButton pan    (olc::PixelGameEngine *pge) { return pge->GetMouse(1); }
+    bool zoomIn (olc::PixelGameEngine *pge) { return pge->GetMouseWheel() > 0 || pge->GetKey(olc::Key::Q).bHeld; }
+    bool zoomOut(olc::PixelGameEngine *pge) { return pge->GetMouseWheel() < 0 || pge->GetKey(olc::Key::A).bHeld; }
 };
 
 struct sShape;
@@ -95,7 +87,7 @@ struct sShape
         nScreenY = (int)((v.y - vWorldOffset.y) * fWorldScale);
     }
 
-    virtual void DrawYourself(olc::PixelGameEngine *pge) = 0;
+    virtual void DrawYourself(olc::PixelGameEngine *pge, bool showHUD) = 0;
 
     sNode* GetNextNode(const olc::vf2d &p)
     {
@@ -121,8 +113,9 @@ struct sShape
         return nullptr;
     }
 
-    void DrawNodes(olc::PixelGameEngine *pge)
+    void DrawNodes(olc::PixelGameEngine *pge, bool showHUD)
     {
+        if (!showHUD) { return; }
         for (auto &n : vecNodes)
         {
             int sx, sy;
@@ -153,7 +146,7 @@ struct sLine : public sShape
 		// know what you are doing, it's ok :D
     }
 
-    void DrawYourself(olc::PixelGameEngine *pge) override
+    void DrawYourself(olc::PixelGameEngine *pge, bool showHUD) override
     {
         int sx, sy, ex, ey;
         WorldToScreen(vecNodes[0].pos, sx, sy);
@@ -175,7 +168,7 @@ struct sBox : public sShape
         vecNodes.reserve(nMaxNodes);
     }
 
-    void DrawYourself(olc::PixelGameEngine *pge) override
+    void DrawYourself(olc::PixelGameEngine *pge, bool showHUD) override
     {
         int sx, sy, ex, ey;
         WorldToScreen(vecNodes[0].pos, sx, sy);
@@ -198,14 +191,17 @@ struct sCircle : public sShape
         vecNodes.reserve(nMaxNodes);
     }
 
-    void DrawYourself(olc::PixelGameEngine *pge) override
+    void DrawYourself(olc::PixelGameEngine *pge, bool showHUD) override
     {
         float fRadius = (vecNodes[0].pos - vecNodes[1].pos).mag();
 
         int sx, sy, ex, ey;
         WorldToScreen(vecNodes[0].pos, sx, sy);
         WorldToScreen(vecNodes[1].pos, ex, ey);
-        pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+        if (showHUD) 
+        {
+            pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+        }
         pge->DrawCircle(sx, sy, fRadius * fWorldScale, col);
     }
 };
@@ -222,21 +218,27 @@ struct sCurve : public sShape
         vecNodes.reserve(nMaxNodes);
     }
 
-    void DrawYourself(olc::PixelGameEngine *pge) override
+    void DrawYourself(olc::PixelGameEngine *pge, bool showHUD) override
     {
         int sx, sy, ex, ey;
-
+        
         // Can draw line from first to second
         WorldToScreen(vecNodes[0].pos, sx, sy);
         WorldToScreen(vecNodes[1].pos, ex, ey);
-        pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+        if (showHUD) 
+        {
+            pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+        }
 
         if (vecNodes.size() == 3) 
         {
             // Can draw second structural line
             WorldToScreen(vecNodes[1].pos, sx, sy);
             WorldToScreen(vecNodes[2].pos, ex, ey);
-            pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+            if (showHUD)
+            {
+                pge->DrawLine(sx, sy, ex, ey, col, 0xFF00FF00);
+            }
 
             // Add bezier curve
             olc::vf2d op = vecNodes[0].pos;
@@ -283,6 +285,8 @@ private:
 
     Keybindings keybindings = Keybindings();
 
+    bool showHUD = true;
+
 
 
 
@@ -306,12 +310,12 @@ private:
     // Handle paning
     void HandlePan(olc::vf2d vMouse)
     {
-        if (GetMouse(keybindings.pan).bPressed)
+        if (keybindings.pan(this).bPressed)
         {
             vStartPan = vMouse;
         }
 
-        if (GetMouse(keybindings.pan).bHeld)
+        if (keybindings.pan(this).bHeld)
         {
             vOffset -= (vMouse - vStartPan) / fScale;
             vStartPan = vMouse;
@@ -324,11 +328,11 @@ private:
         olc::vf2d vMouseBeforeZoom;
         ScreenToWorld((int)vMouse.x, (int)vMouse.y, vMouseBeforeZoom);
 
-        if (GetKey(keybindings.zoomIn).bHeld || keybindings.isZoomingIn(this))
+        if (keybindings.zoomIn(this))
         {
             fScale *= 1.1f;
         }
-        if (GetKey(keybindings.zoomOut).bHeld || keybindings.isZoomingOut(this))
+        if (keybindings.zoomOut(this))
         {
             fScale *= 0.9f;
         }
@@ -437,26 +441,26 @@ private:
     {
 
         // ============= SHAPE SELECTION ============
-        if (GetKey(keybindings.line).bPressed) 
+        if (keybindings.line(this).bPressed) 
         {
             currentShape = Shape::LINE;
         }
 
-        if (GetKey(keybindings.box).bPressed) 
+        if (keybindings.box(this).bPressed) 
         {
             currentShape = Shape::BOX;
         }
-        if (GetKey(keybindings.cicle).bPressed) 
+        if (keybindings.circle(this).bPressed) 
         {
             currentShape = Shape::CIRCLE;
         }
-        if (GetKey(keybindings.spline).bPressed) 
+        if (keybindings.spline(this).bPressed) 
         {
             currentShape = Shape::SPLINE;
         }
 
         // ============= CREATE SHAPE ===============
-        if (GetKey(keybindings.create).bPressed && currentAction == Action::NONE)
+        if (keybindings.create(this).bPressed && currentAction == Action::NONE)
         {
             switch (currentShape)
             {
@@ -484,7 +488,7 @@ private:
         }
 
         // ============ MOVE NODE ===================
-        if (GetKey(keybindings.move).bReleased && currentAction == NONE)
+        if (keybindings.move(this).bReleased && currentAction == NONE)
         {
             //std::cout << "M pressed" << std::endl;
             tempShape == nullptr;
@@ -508,7 +512,7 @@ private:
         }
 
         // ============ ADD NODE TO SHAPE, AND COMPLETE SHAPE ============
-        if (GetMouse(keybindings.select).bPressed && currentAction != Action::NONE) {
+        if (keybindings.select(this).bPressed && currentAction != Action::NONE) {
             selectedNode = tempShape->GetNextNode(vCursor);
             if (selectedNode == nullptr)
             {
@@ -529,15 +533,15 @@ private:
         // Draw all existing shapes
         for (auto &shape : listShapes)
         {
-            shape->DrawYourself(this);
-            shape->DrawNodes(this);
+            shape->DrawYourself(this, showHUD);
+            shape->DrawNodes(this, showHUD);
         }
 
         // ============== DRAW TEMP SHAPE ===================
         // Draw the wip shape.. if there is one
         if (currentAction != Action::NONE) {
-            tempShape->DrawYourself(this);
-            tempShape->DrawNodes(this);
+            tempShape->DrawYourself(this, showHUD);
+            tempShape->DrawNodes(this, showHUD);
         }
     }
 
@@ -563,21 +567,29 @@ public:
 	{
         // Clear Screen
         Clear(olc::DARK_BLUE);
-        
+
+        // toggle HUD
+        if (keybindings.hud(this).bPressed)
+        {
+            showHUD = !showHUD;
+        }
+
         // Handle mouse input
         HandleMouse();
-
-        // Draw the visible world
-        DrawVisibleWorld();
 
         // Handle all the shape drawing, creating, and modifying
         HandleShapes();
 
-        // Tell the user what mode/action they are in/doing
-        DisplayMode();
+        if (showHUD)
+        {
+            // Draw the visible world
+            DrawVisibleWorld();
+            // Tell the user what mode/action they are in/doing
+            DisplayMode();
+        }
 
         // Exit when escape has been pressed
-		return !GetKey(keybindings.exit).bPressed;
+		return !keybindings.exit(this).bPressed;
 	}
 };
 
